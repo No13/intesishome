@@ -11,6 +11,9 @@ intesis_user = ''
 intesis_pass = ''
 intesis_dev = ''
 intesis_dict = {}
+
+cmd_next = ""
+cmd_do_exec = False
 controller = None
 
 def initIntesis():
@@ -39,25 +42,26 @@ def initIntesis():
     intesis_dict = devices[i]
     print("Found device: " + intesis_dev)
 
-def updateIntesis():
-    global controller
-    controller.poll_status()
-    devices = controller.get_devices()
-    for i in devices:
-        intesis_dev = i
-    intesis_dict = devices[i]
-    
 def doIntesisCmd(command):
-    global controller, intesis_dev
-    print("Executing intesisCommand: "+command)
+    global domoticz_url,domoticz_user,domoticz_pass,intesis_user,intesis_pass,intesis_dev,intesis_dict,controller
+    #controller = IntesisHome(intesis_user, intesis_pass)
+    if not controller.is_connected:
+        print("Controller not connected, reconnecting!")
+        controller.connect()
+    if not controller.is_connected:
+        print("Error, not connected!")
+        return
+    print("Executing intesisCommand: "+command+" on "+intesis_dev)
     if command == 'on':
         controller.set_power_on(intesis_dev)
     if command == 'off':
         controller.set_power_off(intesis_dev)
     if command == 'heat':
         controller.set_mode_heat(intesis_dev)
-    if command == 'cool':
+    if command == 'fan':
         controller.set_mode_fan(intesis_dev)
+    if command == 'cool':
+        controller.set_mode_cool(intesis_dev)
     if command == 'dry':
         controller.set_mode_dry(intesis_dev)
     if command == 'auto':
@@ -82,6 +86,7 @@ def doIntesisCmd(command):
 
 class intesisServer(SimpleHTTPRequestHandler):
     def do_GET(self):
+        global cmd_next, cmd_do_exec
         try:
             print (self.path)
             if self.path.startswith("/cmd"):
@@ -89,7 +94,8 @@ class intesisServer(SimpleHTTPRequestHandler):
                 self.send_header('Content-type',	'text/html')
                 self.end_headers()
                 cmd = urlparse(self.path).query
-                doIntesisCmd(cmd)
+                cmd_next = cmd
+                cmd_do_exec = True
                 return
             if self.path.startswith("/"):
                 self.send_response(200)
@@ -105,12 +111,18 @@ class intesisServer(SimpleHTTPRequestHandler):
 
 
 def main():
+    global cmd_next,cmd_do_exec
     try:
         print('Init intesisHome')
         initIntesis()
         server = TCPServer(('', 8000), intesisServer)
         print ('started httpserver...')
-        server.serve_forever()
+        while True:
+            server.handle_request()
+            if cmd_do_exec:
+                print("Going to exec: "+cmd_next)
+                doIntesisCmd(cmd_next)
+                cmd_do_exec = False
     except KeyboardInterrupt:
         print ('^C received, shutting down server')
         server.socket.close()
