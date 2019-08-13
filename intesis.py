@@ -10,17 +10,21 @@ domoticz_pass = ''
 intesis_user = ''
 intesis_pass = ''
 intesis_dev = ''
+intesis_dict = {}
+controller = None
 
 def initIntesis():
-    global domoticz_url,domoticz_user,domoticz_pass,intesis_user,intesis_pass,intesis_dev
+    global domoticz_url,domoticz_user,domoticz_pass,intesis_user,intesis_pass,intesis_dev,intesis_dict,controller
     try:
+        intesis_user = environ['INTESIS_USER']
+        intesis_pass = environ['INTESIS_PASS']
         domoticz_url = environ['DOMO_URL']
         domoticz_user = environ['DOMO_USER']
         domoticz_pass = environ['DOMO_PASS']
-        intesis_user = environ['INTESIS_USER']
-        intesis_pass = environ['INTESIS_PASS']
+      
     except:
         pass
+    print("Looking for airco: "+intesis_user)
     controller = IntesisHome(intesis_user, intesis_pass)
     controller.poll_status()
     devices = controller.get_devices()
@@ -32,10 +36,48 @@ def initIntesis():
         exit()
     for i in devices:
         intesis_dev = i
+    intesis_dict = devices[i]
     print("Found device: " + intesis_dev)
+
+def updateIntesis():
+    global controller
+    controller.poll_status()
+    devices = controller.get_devices()
+    for i in devices:
+        intesis_dev = i
+    intesis_dict = devices[i]
     
 def doIntesisCmd(command):
+    global controller, intesis_dev
     print("Executing intesisCommand: "+command)
+    if command == 'on':
+        controller.set_power_on(intesis_dev)
+    if command == 'off':
+        controller.set_power_off(intesis_dev)
+    if command == 'heat':
+        controller.set_mode_heat(intesis_dev)
+    if command == 'cool':
+        controller.set_mode_fan(intesis_dev)
+    if command == 'dry':
+        controller.set_mode_dry(intesis_dev)
+    if command == 'auto':
+        controller.set_mode_auto(intesis_dev)
+    if command == '1':
+        controller.set_fan_speed(intesis_dev,'quiet')
+    if command == '2':
+        controller.set_fan_speed(intesis_dev,'low')
+    if command == '3':
+        controller.set_fan_speed(intesis_dev,'medium')
+    if command == '4':
+        controller.set_fan_speed(intesis_dev,'high')
+    if command == '0':
+        controller.set_fan_speed(intesis_dev,'auto')
+    try:
+        if int(command) in range(10,40):
+            controller.set_temperature(intesis_dev,int(command))
+    except:
+        pass
+                
     return
 
 class intesisServer(SimpleHTTPRequestHandler):
