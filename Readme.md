@@ -13,7 +13,7 @@ Where command is any of the following:
 * cool - Set mode to 'cool'
 * dry - Set mode to 'dry'
 * auto - Set mode to 'auto'
-* quiet - Set fan speed to 'quiet'
+* fan_quiet - Set fan speed to 'quiet'
 * fan_low - Set fan speed to 'low'
 * fan_medium - Set fan speed to 'medium'
 * fan_high - Set fan speed to 'high'
