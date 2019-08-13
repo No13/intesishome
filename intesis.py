@@ -15,7 +15,7 @@ intesis_dict = {}
 cmd_next = ""
 cmd_do_exec = False
 
-def initIntesis(controller):
+def initIntesis():
     global domoticz_url,domoticz_user,domoticz_pass,intesis_user,intesis_pass,intesis_dev,intesis_dict
     try:
         intesis_user = environ['INTESIS_USER']
@@ -42,8 +42,9 @@ def initIntesis(controller):
     print("Found device: " + intesis_dev)
     if not controller.is_connected:
         controller.connect()
+    return controller
 
-def doIntesisCmd(command,controller):
+def doIntesisCmd(controller,command):
     global domoticz_url,domoticz_user,domoticz_pass,intesis_user,intesis_pass,intesis_dev,intesis_dict
 
     if not controller.is_connected:
@@ -116,8 +117,7 @@ def main():
     global cmd_next,cmd_do_exec
     try:
         print('Init intesisHome')
-        controller = None
-        initIntesis(controller)
+        controller = initIntesis()
         server = TCPServer(('', 8000), intesisServer)
         print ('started httpserver...')
         while True:
