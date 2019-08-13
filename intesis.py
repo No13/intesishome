@@ -1,4 +1,5 @@
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from http.server import SimpleHTTPRequestHandler
+from socketserver import TCPServer
 from pyintesishome import IntesisHome
 from os import environ
 
@@ -30,7 +31,7 @@ def initIntesis():
     print("Found device: " + intesis_dev)
     
 
-class intesisServer(BaseHTTPRequestHandler):
+class intesisServer(SimpleHTTPRequestHandler):
     def do_GET(self):
         try:
             print (self.path)
@@ -38,13 +39,13 @@ class intesisServer(BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header('Content-type',	'text/html')
                 self.end_headers()
-                self.wfile.write("Command received! "+self.path )
+                self.wfile.write(bytearray("Command received! "+self.path,'utf-8'))
                 return
             if self.path.startswith("/"):
                 self.send_response(200)
                 self.send_header('Content-type',	'text/html')
                 self.end_headers()
-                self.wfile.write("Hello, I am a webserver")
+                self.wfile.write(bytearray("Hello, I am a webserver",'utf-8'))
                 return
             return
                 
@@ -55,7 +56,7 @@ class intesisServer(BaseHTTPRequestHandler):
 
 def main():
     try:
-        server = HTTPServer(('', 8000), intesisServer)
+        server = TCPServer(('', 8000), intesisServer)
         print ('started httpserver...')
         server.serve_forever()
     except KeyboardInterrupt:
