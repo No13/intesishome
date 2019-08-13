@@ -41,6 +41,7 @@ def initIntesis():
         intesis_dev = i
     intesis_dict = devices[i]
     print("Found device: " + intesis_dev)
+    print(controller.is_connected)
 
 def doIntesisCmd(command):
     global domoticz_url,domoticz_user,domoticz_pass,intesis_user,intesis_pass,intesis_dev,intesis_dict,controller
