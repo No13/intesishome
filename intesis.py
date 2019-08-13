@@ -1,3 +1,4 @@
+from urllib.parse import urlparse
 from http.server import SimpleHTTPRequestHandler
 from socketserver import TCPServer
 from pyintesishome import IntesisHome
@@ -12,11 +13,14 @@ intesis_dev = ''
 
 def initIntesis():
     global domoticz_url,domoticz_user,domoticz_pass,intesis_user,intesis_pass,intesis_dev
-    domoticz_url = environ['DOMO_URL']
-    domoticz_user = environ['DOMO_USER']
-    domoticz_pass = environ['DOMO_PASS']
-    intesis_user = environ['INTENSIS_USER']
-    intesis_pass = environ['INTENSIS_PASS']
+    try:
+        domoticz_url = environ['DOMO_URL']
+        domoticz_user = environ['DOMO_USER']
+        domoticz_pass = environ['DOMO_PASS']
+        intesis_user = environ['INTESIS_USER']
+        intesis_pass = environ['INTESIS_PASS']
+    except:
+        pass
     controller = IntesisHome(intesis_user, intesis_pass)
     controller.poll_status()
     devices = controller.get_devices()
@@ -30,6 +34,9 @@ def initIntesis():
         intesis_dev = i
     print("Found device: " + intesis_dev)
     
+def doIntesisCmd(command):
+    print("Executing intesisCommand: "+command)
+    return
 
 class intesisServer(SimpleHTTPRequestHandler):
     def do_GET(self):
@@ -39,7 +46,8 @@ class intesisServer(SimpleHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header('Content-type',	'text/html')
                 self.end_headers()
-                self.wfile.write(bytearray("Command received! "+self.path,'utf-8'))
+                cmd = urlparse(self.path).query
+                doIntesisCmd(cmd)
                 return
             if self.path.startswith("/"):
                 self.send_response(200)
@@ -56,6 +64,8 @@ class intesisServer(SimpleHTTPRequestHandler):
 
 def main():
     try:
+        print('Init intesisHome')
+        initIntesis()
         server = TCPServer(('', 8000), intesisServer)
         print ('started httpserver...')
         server.serve_forever()
