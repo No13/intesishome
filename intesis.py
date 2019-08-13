@@ -67,15 +67,15 @@ def doIntesisCmd(command):
         controller.set_mode_dry(intesis_dev)
     if command == 'auto':
         controller.set_mode_auto(intesis_dev)
-    if command == 'quiet':
+    if command == 'fan_quiet':
         controller.set_fan_speed(intesis_dev,'quiet')
-    if command == 'low':
+    if command == 'fan_low':
         controller.set_fan_speed(intesis_dev,'low')
-    if command == 'medium':
+    if command == 'fan_medium':
         controller.set_fan_speed(intesis_dev,'medium')
-    if command == 'high':
+    if command == 'fan_high':
         controller.set_fan_speed(intesis_dev,'high')
-    if command == 'auto':
+    if command == 'fan_auto':
         controller.set_fan_speed(intesis_dev,'auto')
     try:
         if int(command) in range(10,40):
