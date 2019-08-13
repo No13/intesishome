@@ -6,5 +6,5 @@ RUN cd /pyIntesisHome/ && python ./setup.py install
 
 COPY intesis.py /intesis.py
 
-RUN python intesis.py
+CMD ["python", "/intesis.py"]
 EXPOSE 8000
