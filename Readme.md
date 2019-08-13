@@ -14,10 +14,10 @@ Where command is any of the following:
 * dry - Set mode to 'dry'
 * auto - Set mode to 'auto'
 * quiet - Set fan speed to 'quiet'
-* low - Set fan speed to 'low'
-* medium - Set fan speed to 'medium'
-* high - Set fan speed to 'high'
-* auto - Set fan speed to 'auto'
+* fan_low - Set fan speed to 'low'
+* fan_medium - Set fan speed to 'medium'
+* fan_high - Set fan speed to 'high'
+* fan_auto - Set fan speed to 'auto'
 * 10-39 - Set temperature to X
 
 # Building the image
