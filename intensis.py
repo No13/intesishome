@@ -2,13 +2,13 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from pyintesishome import IntesisHome
 from os import environ
 
-def initIntensis():
+def initIntesis():
     domoticz_url = environ['DOMO_URL']
     domoticz_user = environ['DOMO_USER']
     domoticz_pass = environ['DOMO_PASS']
-    intensis_user = environ['INTENSIS_USER']
-    intensis_pass = environ['INTENSIS_PASS']
-    controller = IntesisHome(intensis_user, intensis_pass)
+    intesis_user = environ['INTENSIS_USER']
+    intesis_pass = environ['INTENSIS_PASS']
+    controller = IntesisHome(intesis_user, intesis_pass)
     controller.poll_status()
     devices = controller.get_devices()
     if len(devices) == 0:
@@ -17,7 +17,7 @@ def initIntensis():
     if len(devices) > 1:
         print("Too many devices found!")
         exit()
-    
+    intesis    
 
 
 class intesisServer(BaseHTTPRequestHandler):
