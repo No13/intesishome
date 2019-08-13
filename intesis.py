@@ -56,8 +56,10 @@ def doIntesisCmd(command):
         controller.set_power_off(intesis_dev)
     if command == 'heat':
         controller.set_mode_heat(intesis_dev)
+    if command == 'fan':
+        controller.set_mode_fan(intesis_dev)     
     if command == 'cool':
-        controller.set_mode_fan(intesis_dev)
+        controller.set_mode_cool(intesis_dev)
     if command == 'dry':
         controller.set_mode_dry(intesis_dev)
     if command == 'auto':
