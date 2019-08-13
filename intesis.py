@@ -14,10 +14,9 @@ intesis_dict = {}
 
 cmd_next = ""
 cmd_do_exec = False
-controller = None
 
-def initIntesis():
-    global domoticz_url,domoticz_user,domoticz_pass,intesis_user,intesis_pass,intesis_dev,intesis_dict,controller
+def initIntesis(controller):
+    global domoticz_url,domoticz_user,domoticz_pass,intesis_user,intesis_pass,intesis_dev,intesis_dict
     try:
         intesis_user = environ['INTESIS_USER']
         intesis_pass = environ['INTESIS_PASS']
@@ -41,17 +40,19 @@ def initIntesis():
         intesis_dev = i
     intesis_dict = devices[i]
     print("Found device: " + intesis_dev)
-    print(controller.is_connected)
+    if not controller.is_connected:
+        controller.connect()
 
-def doIntesisCmd(command):
-    global domoticz_url,domoticz_user,domoticz_pass,intesis_user,intesis_pass,intesis_dev,intesis_dict,controller
-    #controller = IntesisHome(intesis_user, intesis_pass)
+def doIntesisCmd(command,controller):
+    global domoticz_url,domoticz_user,domoticz_pass,intesis_user,intesis_pass,intesis_dev,intesis_dict
+
     if not controller.is_connected:
         print("Controller not connected, reconnecting!")
         controller.connect()
     if not controller.is_connected:
         print("Error, not connected!")
-        return
+        print("Attempting anyway!")
+        #return
     print("Executing intesisCommand: "+command+" on "+intesis_dev)
     if command == 'on':
         controller.set_power_on(intesis_dev)
@@ -115,14 +116,15 @@ def main():
     global cmd_next,cmd_do_exec
     try:
         print('Init intesisHome')
-        initIntesis()
+        controller = None
+        initIntesis(controller)
         server = TCPServer(('', 8000), intesisServer)
         print ('started httpserver...')
         while True:
             server.handle_request()
             if cmd_do_exec:
                 print("Going to exec: "+cmd_next)
-                doIntesisCmd(cmd_next)
+                doIntesisCmd(controller,cmd_next)
                 cmd_do_exec = False
     except KeyboardInterrupt:
         print ('^C received, shutting down server')
