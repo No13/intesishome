@@ -16,12 +16,11 @@ intesis_pass = ''
 intesis_dev = ''
 intesis_dict = {}
 loop = None
-cmd_next = ""
-cmd_do_exec = False
 old_setpoint = '0'
+controller = None
 
 def initIntesis():
-    global domoticz_url,domoticz_user,domoticz_pass,domoticz_idx,intesis_user,intesis_pass,intesis_dev,intesis_dict,loop
+    global domoticz_url,domoticz_user,domoticz_pass,domoticz_idx,intesis_user,intesis_pass,intesis_dev,intesis_dict,loop, controller
     loop = asyncio.new_event_loop()
     try:
         intesis_user = environ['INTESIS_USER']
@@ -33,7 +32,7 @@ def initIntesis():
     except:
         pass
     print("Looking for airco: "+intesis_user)
-    controller = IntesisHome(intesis_user, intesis_pass, loop)
+    controller = IntesisHome(intesis_user, intesis_pass)
     controller.poll_status()
     devices = controller.get_devices()
     if len(devices) == 0:
@@ -46,10 +45,9 @@ def initIntesis():
         intesis_dev = i
     intesis_dict = devices[i]
     print("Found device: " + intesis_dev)
-    return controller
 
-def doIntesisCmd(controller,command):
-    global domoticz_url,domoticz_user,domoticz_pass,intesis_user,intesis_pass,intesis_dev,intesis_dict
+def doIntesisCmd(command):
+    global domoticz_url,domoticz_user,domoticz_pass,intesis_user,intesis_pass,intesis_dev,intesis_dict,controller
 
     if not controller.is_connected:
         print("Controller not connected, reconnecting!")
@@ -89,13 +87,13 @@ def doIntesisCmd(controller,command):
         if int(command) in range(10,40):
             controller.set_temperature(intesis_dev,int(command))
     except:
+        print("Error sending temperature")
         pass
 
     return
 
 class intesisServer(SimpleHTTPRequestHandler):
     def do_GET(self):
-        global cmd_next, cmd_do_exec
         try:
             print (self.path)
             if self.path.startswith("/cmd"):
@@ -103,8 +101,7 @@ class intesisServer(SimpleHTTPRequestHandler):
                 self.send_header('Content-type',	'text/html')
                 self.end_headers()
                 cmd = urlparse(self.path).query
-                cmd_next = cmd
-                cmd_do_exec = True
+                doIntesisCmd(cmd)
                 return
             if self.path.startswith("/"):
                 self.send_response(200)
@@ -118,7 +115,8 @@ class intesisServer(SimpleHTTPRequestHandler):
             self.send_error(404,'File Not Found: %s' % self.path)
 
 def getSetPoint():
-    global domoticz_url, domoticz_user, domoticz_pass, domoticz_idx, old_setpoint, cmd_next, cmd_do_exec
+    global domoticz_url, domoticz_user, domoticz_pass, domoticz_idx, old_setpoint
+    cmd = None
     try:
         url = domoticz_url+'?type=devices&rid='+str(domoticz_idx)
         domo = requests.get(url, auth=(domoticz_user,domoticz_pass))
@@ -127,8 +125,7 @@ def getSetPoint():
         if new_setpoint != old_setpoint:
             if old_setpoint != '0':
                 print (" Setting setpoint to: "+ new_setpoint)
-                cmd_next = new_setpoint
-                cmd_do_exec = True
+                cmd = new_setpoint
             old_setpoint = new_setpoint
     except:
         print("Polling Domoticz @ "+url)
@@ -136,13 +133,15 @@ def getSetPoint():
         print(domo_json)
         pass
     finally:
+        if cmd != None:
+            doIntesisCmd(cmd)
         threading.Timer(15, getSetPoint).start()
     
 def main():
-    global cmd_next,cmd_do_exec,domoticz_user,domoticz_pass,domoticz_url,domoticz_idx
+    global domoticz_user,domoticz_pass,domoticz_url,domoticz_idx
     try:
         print('Init intesisHome')
-        controller = initIntesis()
+        initIntesis()
         server = TCPServer(('', 8000), intesisServer)
         print ('started httpserver...')
         if domoticz_url != '' and domoticz_idx != '':
@@ -151,10 +150,6 @@ def main():
 
         while True:
             server.handle_request()
-            if cmd_do_exec:
-                print("Going to exec: "+cmd_next)
-                doIntesisCmd(controller,cmd_next)
-                cmd_do_exec = False
     except KeyboardInterrupt:
         print ('^C received, shutting down server')
         server.socket.close()
