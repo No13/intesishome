@@ -3,6 +3,8 @@ from http.server import SimpleHTTPRequestHandler
 from socketserver import TCPServer
 from pyintesishome import IntesisHome
 from os import environ
+import asyncio
+import gc
 
 domoticz_url = ''
 domoticz_user = ''
@@ -11,12 +13,13 @@ intesis_user = ''
 intesis_pass = ''
 intesis_dev = ''
 intesis_dict = {}
-
+loop = None
 cmd_next = ""
 cmd_do_exec = False
 
 def initIntesis():
-    global domoticz_url,domoticz_user,domoticz_pass,intesis_user,intesis_pass,intesis_dev,intesis_dict
+    global domoticz_url,domoticz_user,domoticz_pass,intesis_user,intesis_pass,intesis_dev,intesis_dict,loop
+    loop = asyncio.new_event_loop()
     try:
         intesis_user = environ['INTESIS_USER']
         intesis_pass = environ['INTESIS_PASS']
@@ -27,7 +30,7 @@ def initIntesis():
     except:
         pass
     print("Looking for airco: "+intesis_user)
-    controller = IntesisHome(intesis_user, intesis_pass)
+    controller = IntesisHome(intesis_user, intesis_pass, loop)
     controller.poll_status()
     devices = controller.get_devices()
     if len(devices) == 0:
@@ -40,8 +43,6 @@ def initIntesis():
         intesis_dev = i
     intesis_dict = devices[i]
     print("Found device: " + intesis_dev)
-    if not controller.is_connected:
-        controller.connect()
     return controller
 
 def doIntesisCmd(controller,command):
@@ -50,10 +51,12 @@ def doIntesisCmd(controller,command):
     if not controller.is_connected:
         print("Controller not connected, reconnecting!")
         controller.connect()
+
     if not controller.is_connected:
         print("Error, not connected!")
         print("Attempting anyway!")
         #return
+
     print("Executing intesisCommand: "+command+" on "+intesis_dev)
     if command == 'on':
         controller.set_power_on(intesis_dev)
@@ -84,7 +87,7 @@ def doIntesisCmd(controller,command):
             controller.set_temperature(intesis_dev,int(command))
     except:
         pass
-                
+
     return
 
 class intesisServer(SimpleHTTPRequestHandler):
