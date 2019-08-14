@@ -118,7 +118,7 @@ class intesisServer(SimpleHTTPRequestHandler):
             self.send_error(404,'File Not Found: %s' % self.path)
 
 def getSetPoint():
-    global domoticz_url, domoticz_user, domoticz_pass, domoticz_idx, old_setpoint
+    global domoticz_url, domoticz_user, domoticz_pass, domoticz_idx, old_setpoint, cmd_next, cmd_do_exec
     try:
         url = domoticz_url+'?type=devices&rid='+str(domoticz_idx)
         domo = requests.get(url, auth=(domoticz_user,domoticz_pass))
