@@ -3,12 +3,14 @@ from http.server import SimpleHTTPRequestHandler
 from socketserver import TCPServer
 from pyintesishome import IntesisHome
 from os import environ
+import threading,requests
 import asyncio
 import gc
 
 domoticz_url = ''
 domoticz_user = ''
 domoticz_pass = ''
+domoticz_idx = ''
 intesis_user = ''
 intesis_pass = ''
 intesis_dev = ''
@@ -16,9 +18,10 @@ intesis_dict = {}
 loop = None
 cmd_next = ""
 cmd_do_exec = False
+old_setpoint = '0'
 
 def initIntesis():
-    global domoticz_url,domoticz_user,domoticz_pass,intesis_user,intesis_pass,intesis_dev,intesis_dict,loop
+    global domoticz_url,domoticz_user,domoticz_pass,domoticz_idx,intesis_user,intesis_pass,intesis_dev,intesis_dict,loop
     loop = asyncio.new_event_loop()
     try:
         intesis_user = environ['INTESIS_USER']
@@ -26,7 +29,7 @@ def initIntesis():
         domoticz_url = environ['DOMO_URL']
         domoticz_user = environ['DOMO_USER']
         domoticz_pass = environ['DOMO_PASS']
-      
+        domoticz_idx = environ['DOMO_IDX']
     except:
         pass
     print("Looking for airco: "+intesis_user)
@@ -114,15 +117,38 @@ class intesisServer(SimpleHTTPRequestHandler):
         except IOError:
             self.send_error(404,'File Not Found: %s' % self.path)
 
-
-
+def getSetPoint():
+    global domoticz_url, domoticz_user, domoticz_pass, domoticz_idx, old_setpoint
+    try:
+        url = domoticz_url+'?type=devices&rid='+str(domoticz_idx)
+        domo = requests.get(url, auth=(domoticz_user,domoticz_pass))
+        domo_json = domo.json()
+        new_setpoint = str(int(float(domo_json['result'][0]['SetPoint'])))
+        if new_setpoint != old_setpoint:
+            if old_setpoint != '0':
+                print (" Setting setpoint to: "+ new_setpoint)
+                cmd_next = new_setpoint
+                cmd_do_exec = True
+            old_setpoint = new_setpoint
+    except:
+        print("Polling Domoticz @ "+url)
+        print("ERROR polling domoticz")
+        print(domo_json)
+        pass
+    finally:
+        threading.Timer(15, getSetPoint).start()
+    
 def main():
-    global cmd_next,cmd_do_exec
+    global cmd_next,cmd_do_exec,domoticz_user,domoticz_pass,domoticz_url,domoticz_idx
     try:
         print('Init intesisHome')
         controller = initIntesis()
         server = TCPServer(('', 8000), intesisServer)
         print ('started httpserver...')
+        if domoticz_url != '' and domoticz_idx != '':
+            # Start timer to poll domoticz
+            getSetPoint()
+
         while True:
             server.handle_request()
             if cmd_do_exec:
