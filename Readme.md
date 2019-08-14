@@ -26,3 +26,13 @@ Is as simple as:
 
 # Running the container
 > docker run -it -e INTESIS_USER=myself -e INTESIS_PASS=sosecret intesishome
+
+# Integration with Domoticz
+> docker run -it \
+>   -e INTESIS_USER=myself \
+>   -e INTESIS_PASS=sosecret \
+>   -e DOMO_URL="https://domoticz.url/json.htm" \
+>   -e DOMO_USER=domoticzuser \
+>   -e DOMO_PASS=ososecret \
+>   -e DOMO_IDX=66 \
+>   intensishome
