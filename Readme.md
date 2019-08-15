@@ -28,6 +28,11 @@ Is as simple as:
 > docker run -it -e INTESIS_USER=myself -e INTESIS_PASS=sosecret intesishome
 
 # Integration with Domoticz
+Create a virtual SetPoint in Domoticz, fill the DOMO_* environmental variables 
+and the script will poll for this value every 15 seconds.
+When change is detected in the SetPoint, a set temperature command will be
+issued to the airconditioning unit.
+
 > docker run -it \
 >   -e INTESIS_USER=myself \
 >   -e INTESIS_PASS=sosecret \
